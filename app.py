@@ -159,6 +159,12 @@ if loaded:
             st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask_labels_1_2_only.nii.gz","application/gzip")
         finally:
             if tmp and os.path.exists(tmp): os.remove(tmp)
+            st.markdown("""
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+          <div style="background:rgba(0,213,232,.13);border:1px solid #00D5E8;border-radius:10px;padding:10px 14px;color:#baf8ff">■ Label 1 · Cyan</div>
+          <div style="background:rgba(255,210,31,.13);border:1px solid #FFD21F;border-radius:10px;padding:10px 14px;color:#fff0a6">■ Label 2 · Yellow</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.header("05 / Remote specialist review")
         st.text_area("Review notes (prototype; avoid identifiable patient information)",key="nv_review_notes")
 else:
