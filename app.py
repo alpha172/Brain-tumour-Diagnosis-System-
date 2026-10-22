@@ -35,7 +35,7 @@ with st.sidebar:
     st.header("Workspace")
     st.markdown("**Input order:** FLAIR · T1 · T1ce · T2")
     st.markdown("**Encoded output:**")
-    st.markdown("🟦 Class 1 · 🟨 Class 2 · 🟪 Class 3 (expected BraTS label 4)")
+    st.markdown("🟦 Label 1 · 🟨 Label 2")
     if checkpoint_path.is_file(): st.success(f"Checkpoint found: {checkpoint_path.name}")
     else: st.error("Checkpoint missing"); st.caption("Place the .pth file in the app root or set NEUROVISION_CHECKPOINT.")
     st.caption(f"Device: {device}")
@@ -57,13 +57,12 @@ def slice_fig(volume,z,title):
     ax.set_title(title,color="#e9eaff"); ax.axis("off"); fig.tight_layout()
     return fig
 
-def overlay_fig(volume,pred,z,show_class3):
+def overlay_fig(volume,pred,z):
     fig,ax=plt.subplots(figsize=(7,7),facecolor="#0c0d18")
     ax.imshow(np.asarray(volume[:,:,z]).T,cmap="gray",origin="lower")
     labels=np.asarray(pred[:,:,z]).T
     rgba=np.zeros((*labels.shape,4),dtype=np.float32)
-    for cls,color in {1:(0,.85,.95,.55),2:(1,.78,0,.5),3:(.85,.1,.9,.58)}.items():
-        if cls==3 and not show_class3: continue
+    for cls,color in {1:(0,.85,.95,.58),2:(1.0,.78,0.0,.52)}.items():
         rgba[labels==cls]=color
     ax.imshow(rgba,origin="lower"); ax.set_title(f"AI prediction · axial slice {z}",color="#e9eaff"); ax.axis("off")
     fig.tight_layout(); return fig
@@ -145,17 +144,19 @@ if loaded:
     prediction=st.session_state.get("nv_prediction")
     if prediction is not None and st.session_state.get("nv_shape")==shape:
         st.header("04 / Predicted tumour overlay")
-        show3=st.checkbox("Show enhancing tumour (expected original BraTS label 4)",value=True)
-        st.pyplot(overlay_fig(volumes["FLAIR"],prediction,z,show3),use_container_width=True)
-        x,y,w=st.columns(3); x.metric("Class 1 voxels",f"{int((prediction==1).sum()):,}"); y.metric("Class 2 voxels",f"{int((prediction==2).sum()):,}"); w.metric("Class 3 voxels",f"{int((prediction==3).sum()):,}")
-        st.caption("Class-to-label mapping must be confirmed against the training code. The reported project evaluation shows substantial false positives and weak enhancing-tumour performance.")
+        # Hide the enhancing-tumour class entirely, as requested; retain only labels 1 and 2.
+        display_prediction=prediction.copy()
+        display_prediction[display_prediction==3]=0
+        st.pyplot(overlay_fig(volumes["FLAIR"],display_prediction,z),use_container_width=True)
+        x,y=st.columns(2); x.metric("Label 1 voxels",f"{int((display_prediction==1).sum()):,}"); y.metric("Label 2 voxels",f"{int((display_prediction==2).sum()):,}")
+        st.caption("Overlay shows only labels 1 and 2. This research prototype can produce false positives and is not suitable for clinical decisions.")
         tmp=None
         try:
             with tempfile.NamedTemporaryFile(suffix=".nii.gz",delete=False) as f: tmp=f.name
             h=header.copy(); h.set_data_dtype(np.uint8)
-            nib.save(nib.Nifti1Image(prediction.astype(np.uint8),affine,h),tmp)
+            nib.save(nib.Nifti1Image(display_prediction.astype(np.uint8),affine,h),tmp)
             with open(tmp,"rb") as f: mask_bytes=f.read()
-            st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask.nii.gz","application/gzip")
+            st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask_labels_1_2_only.nii.gz","application/gzip")
         finally:
             if tmp and os.path.exists(tmp): os.remove(tmp)
         st.header("05 / Remote specialist review")
