@@ -48,8 +48,22 @@ with st.sidebar:
     st.caption("Upload a checkpoint only after confirming it matches the trained architecture.")
 
 def read_nifti(file_bytes, filename):
-    # nibabel can load from a file-like object for .nii and .nii.gz.
-    return nib.load(io.BytesIO(file_bytes))
+    # nibabel.load expects a filesystem path here. Save uploaded/ZIP bytes
+    # to a temporary NIfTI file, fully cache the voxel data, then remove it.
+    lower_name = Path(filename).name.lower()
+    suffix = ".nii.gz" if lower_name.endswith(".nii.gz") else ".nii"
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
+            temp_file.write(file_bytes)
+            temp_path = temp_file.name
+        img = nib.load(temp_path)
+        # Force data into memory before the temporary file is deleted.
+        img.get_fdata(dtype=np.float32)
+        return img
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 def load_upload(uploaded):
     data = uploaded.getvalue()
@@ -153,3 +167,4 @@ else:
 
 st.markdown("---")
 st.markdown('<p class="small-muted">NeuroVision AI · Academic research prototype · Not for clinical decision-making</p>', unsafe_allow_html=True)
+
