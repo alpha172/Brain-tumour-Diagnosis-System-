@@ -1,0 +1,33 @@
+{
+  "model": "3D U-Net",
+  "input_modalities": [
+    "flair",
+    "t1",
+    "t1ce",
+    "t2"
+  ],
+  "original_to_encoded_labels": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "4": 3
+  },
+  "patch_size": [
+    96,
+    96,
+    96
+  ],
+  "batch_size": 1,
+  "learning_rate": 0.0001,
+  "weight_decay": 1e-05,
+  "loss": "0.5 * weighted_cross_entropy + 0.5 * soft_dice_loss",
+  "class_weights": [
+    0.073,
+    1.485,
+    0.898,
+    1.544
+  ],
+  "seed": 42,
+  "initial_checkpoint": "/content/drive/MyDrive/BrainTumor_Telemedicine/checkpoints/brats3d_unet_epoch001.pth",
+  "split_file": "/content/brats2020/dataset_split.json"
+}

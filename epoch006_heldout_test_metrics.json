@@ -1,0 +1,39 @@
+{
+  "checkpoint": "brats3d_unet_balanced_dice_ce_epoch006.pth",
+  "test_cases": 37,
+  "aggregation": "global voxel-level",
+  "metrics": {
+    "Background": {
+      "dice": 0.9144245718209572,
+      "precision": 0.9998281120466849,
+      "recall": 0.8424628892259294,
+      "tp": 275294830,
+      "fp": 47328,
+      "fn": 51479006
+    },
+    "Tumor label 1": {
+      "dice": 0.16799646912114113,
+      "precision": 0.13927440447302225,
+      "recall": 0.21164281305556581,
+      "tp": 200594,
+      "fp": 1239685,
+      "fn": 747201
+    },
+    "Tumor label 2": {
+      "dice": 0.3641009899454561,
+      "precision": 0.22857996025412647,
+      "recall": 0.8943385584477442,
+      "tp": 1753721,
+      "fp": 5918522,
+      "fn": 207193
+    },
+    "Enhancing tumor (original label 4)": {
+      "dice": 0.022376040283852237,
+      "precision": 0.01134736315345766,
+      "recall": 0.7967373422806467,
+      "tp": 520632,
+      "fp": 45360688,
+      "fn": 132823
+    }
+  }
+}

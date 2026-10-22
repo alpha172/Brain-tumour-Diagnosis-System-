@@ -1,0 +1,33 @@
+{
+  "checkpoint": "brats3d_unet_balanced_dice_ce_epoch006.pth",
+  "validation_cases": 37,
+  "postprocessing": {
+    "raw": {
+      "foreground_mask": false,
+      "micro_dice": {
+        "class_1": 0.1411,
+        "class_2": 0.3753,
+        "class_3": 0.0257
+      }
+    },
+    "foreground_mask": {
+      "foreground_definition": "any modality has nonzero intensity",
+      "micro_dice": {
+        "class_1": 0.1433,
+        "class_2": 0.3816,
+        "class_3": 0.0433
+      },
+      "micro_recall": {
+        "class_1": 0.1955,
+        "class_2": 0.9035,
+        "class_3": 0.8125
+      },
+      "predicted_voxels_removed": {
+        "class_1": 36920,
+        "class_2": 158939,
+        "class_3": 19097814
+      }
+    }
+  },
+  "note": "Measured validation results; foreground mask is a candidate postprocessing step, not a clinically validated method."
+}

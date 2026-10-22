@@ -1,0 +1,70 @@
+{
+  "project": "BraTS2020 Brain Tumor Segmentation",
+  "model": {
+    "architecture": "Compact 3D U-Net",
+    "input_modalities": [
+      "FLAIR",
+      "T1",
+      "T1ce",
+      "T2"
+    ],
+    "input_channels": 4,
+    "output_classes": 4,
+    "parameters": 351484,
+    "checkpoint_epoch": 6,
+    "mean_training_loss": 0.8670165023561252,
+    "training_loss": "weighted CE + four-class soft Dice"
+  },
+  "dataset": {
+    "name": "BraTS2020",
+    "training_cases": 295,
+    "validation_cases": 37,
+    "test_cases": 37,
+    "test_evaluation_aggregation": "global voxel-level"
+  },
+  "test_metrics": {
+    "Background": {
+      "dice": 0.9144245718209572,
+      "precision": 0.9998281120466849,
+      "recall": 0.8424628892259294,
+      "tp": 275294830,
+      "fp": 47328,
+      "fn": 51479006
+    },
+    "Tumor label 1": {
+      "dice": 0.16799646912114113,
+      "precision": 0.13927440447302225,
+      "recall": 0.21164281305556581,
+      "tp": 200594,
+      "fp": 1239685,
+      "fn": 747201
+    },
+    "Tumor label 2": {
+      "dice": 0.3641009899454561,
+      "precision": 0.22857996025412647,
+      "recall": 0.8943385584477442,
+      "tp": 1753721,
+      "fp": 5918522,
+      "fn": 207193
+    },
+    "Enhancing tumor (original label 4)": {
+      "dice": 0.022376040283852237,
+      "precision": 0.01134736315345766,
+      "recall": 0.7967373422806467,
+      "tp": 520632,
+      "fp": 45360688,
+      "fn": 132823
+    }
+  },
+  "visual_results": [
+    "BraTS20_Training_004_comparison.png",
+    "BraTS20_Training_004_segmentation_comparison.png",
+    "BraTS20_Training_013_comparison.png",
+    "BraTS20_Training_014_comparison.png"
+  ],
+  "limitations": [
+    "Test performance is weak for some tumor classes.",
+    "Predictions contain substantial false positives.",
+    "This model is for research demonstration, not clinical diagnosis."
+  ]
+}
