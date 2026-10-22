@@ -41,11 +41,17 @@ device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 with st.sidebar:
     st.header("Workspace")
     st.markdown("**Input order:** FLAIR · T1 · T1ce · T2")
+    uploaded_checkpoint = st.file_uploader("Trained model checkpoint (.pth)", type=["pth"], key="model_checkpoint_upload")
+    if uploaded_checkpoint is not None:
+        uploaded_checkpoint_path = Path(tempfile.gettempdir()) / "neurovision_uploaded_checkpoint.pth"
+        uploaded_checkpoint_path.write_bytes(uploaded_checkpoint.getvalue())
+        checkpoint_path = uploaded_checkpoint_path
     st.markdown("**Encoded output:**")
     st.markdown("""
-    <div style="font-size:.82rem;color:#c6cfdd;line-height:2">
-      <span style="color:#00D5E8">■</span> Label 1<br>
-      <span style="color:#FFD21F">■</span> Label 2
+    <div style="font-size:.82rem;color:#c6cfdd;line-height:2.0">
+      <span style="color:#00D5E8">■</span> Label 1 · Non-enhancing / necrotic core<br>
+      <span style="color:#FFD21F">■</span> Label 2 · Edema<br>
+      <span style="color:#D946EF">■</span> Label 3 · Enhancing tumour (original label 4)
     </div>
     """, unsafe_allow_html=True)
     if checkpoint_path.is_file():
@@ -77,7 +83,12 @@ def overlay_fig(volume,pred,z):
     ax.imshow(np.asarray(volume[:,:,z]).T,cmap="gray",origin="lower")
     labels=np.asarray(pred[:,:,z]).T
     rgba=np.zeros((*labels.shape,4),dtype=np.float32)
-    for cls,color in {1:(0,.85,.95,.58),2:(1.0,.78,0.0,.52)}.items():
+    # RGB tumour-class overlay: cyan, yellow, and magenta.
+    for cls,color in {
+        1:(0.0,0.84,0.91,0.68),
+        2:(1.0,0.78,0.0,0.62),
+        3:(0.85,0.20,0.88,0.68),
+    }.items():
         rgba[labels==cls]=color
     ax.imshow(rgba,origin="lower"); ax.set_title(f"AI prediction · axial slice {z}",color="#e9eaff"); ax.axis("off")
     fig.tight_layout(); return fig
@@ -159,25 +170,29 @@ if loaded:
     prediction=st.session_state.get("nv_prediction")
     if prediction is not None and st.session_state.get("nv_shape")==shape:
         st.header("04 / Predicted tumour overlay")
-        # Hide the enhancing-tumour class entirely, as requested; retain only labels 1 and 2.
+        # Preserve all three tumour classes and display each with its own RGB colour.
         display_prediction=prediction.copy()
-        display_prediction[display_prediction==3]=0
         st.pyplot(overlay_fig(volumes["FLAIR"],display_prediction,z),use_container_width=True)
-        x,y=st.columns(2); x.metric("Label 1 voxels",f"{int((display_prediction==1).sum()):,}"); y.metric("Label 2 voxels",f"{int((display_prediction==2).sum()):,}")
-        st.caption("Overlay shows only labels 1 and 2. This research prototype can produce false positives and is not suitable for clinical decisions.")
+        x,y,w=st.columns(3)
+        x.metric("Label 1 · Core",f"{int((display_prediction==1).sum()):,}")
+        y.metric("Label 2 · Edema",f"{int((display_prediction==2).sum()):,}")
+        w.metric("Label 3 · Enhancing",f"{int((display_prediction==3).sum()):,}")
+        st.caption("RGB overlay: cyan = label 1, yellow = label 2, magenta = encoded label 3 (original BraTS label 4). Predictions can contain false positives and are for research only.")
         tmp=None
         try:
             with tempfile.NamedTemporaryFile(suffix=".nii.gz",delete=False) as f: tmp=f.name
             h=header.copy(); h.set_data_dtype(np.uint8)
+            # Export the complete four-class encoded mask, including enhancing tumour (class 3).
             nib.save(nib.Nifti1Image(display_prediction.astype(np.uint8),affine,h),tmp)
             with open(tmp,"rb") as f: mask_bytes=f.read()
-            st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask_labels_1_2_only.nii.gz","application/gzip")
+            st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask_all_classes.nii.gz","application/gzip")
         finally:
             if tmp and os.path.exists(tmp): os.remove(tmp)
         st.markdown("""
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
-          <div style="background:rgba(0,213,232,.13);border:1px solid #00D5E8;border-radius:10px;padding:10px 14px;color:#baf8ff">■ Label 1 · Cyan</div>
-          <div style="background:rgba(255,210,31,.13);border:1px solid #FFD21F;border-radius:10px;padding:10px 14px;color:#fff0a6">■ Label 2 · Yellow</div>
+          <div style="background:rgba(0,213,232,.13);border:1px solid #00D5E8;border-radius:8px;padding:10px 14px;color:#baf8ff">■ Label 1 · Core</div>
+          <div style="background:rgba(255,210,31,.13);border:1px solid #FFD21F;border-radius:8px;padding:10px 14px;color:#fff0a6">■ Label 2 · Edema</div>
+          <div style="background:rgba(217,70,239,.13);border:1px solid #D946EF;border-radius:8px;padding:10px 14px;color:#f5c8fb">■ Label 3 · Enhancing (original 4)</div>
         </div>
         """, unsafe_allow_html=True)
         st.header("05 / Remote specialist review")
@@ -190,5 +205,5 @@ st.caption("Previously recorded held-out test metrics supplied for this project.
 m1, m2 = st.columns(2)
 m1.metric("Label 1 · Dice", "0.1680")
 m2.metric("Label 2 · Dice", "0.3641")
-st.info("New-scan inference requires the trained checkpoint to be accessible at the configured path. Saved verification metrics do not replace model weights.")
+st.info("Upload the trained .pth checkpoint in the sidebar or configure NEUROVISION_CHECKPOINT to point to the file in the deployment. Saved verification metrics do not replace model weights.")
 st.markdown('<p class="small-muted">NeuroVision AI · Academic research prototype · Not for clinical decision-making</p>',unsafe_allow_html=True)
