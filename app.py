@@ -159,7 +159,7 @@ if loaded:
             st.download_button("Download predicted mask (.nii.gz)",mask_bytes,"neurovision_predicted_mask_labels_1_2_only.nii.gz","application/gzip")
         finally:
             if tmp and os.path.exists(tmp): os.remove(tmp)
-            st.markdown("""
+        st.markdown("""
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
           <div style="background:rgba(0,213,232,.13);border:1px solid #00D5E8;border-radius:10px;padding:10px 14px;color:#baf8ff">■ Label 1 · Cyan</div>
           <div style="background:rgba(255,210,31,.13);border:1px solid #FFD21F;border-radius:10px;padding:10px 14px;color:#fff0a6">■ Label 2 · Yellow</div>
@@ -170,4 +170,10 @@ if loaded:
 else:
     st.markdown('<div class="panel"><b>Workspace ready</b><p class="small-muted">Upload four aligned MRI modalities to view slices and run inference with the installed checkpoint.</p></div>',unsafe_allow_html=True)
 st.markdown("---")
+st.header("06 / Model verification")
+st.caption("Previously recorded held-out test metrics supplied for this project. These are dataset-level results, not a score for the scan currently uploaded.")
+m1, m2 = st.columns(2)
+m1.metric("Label 1 · Dice", "0.1680")
+m2.metric("Label 2 · Dice", "0.3641")
+st.info("New-scan inference requires the trained checkpoint to be accessible at the configured path. Saved verification metrics do not replace model weights.")
 st.markdown('<p class="small-muted">NeuroVision AI · Academic research prototype · Not for clinical decision-making</p>',unsafe_allow_html=True)
