@@ -12,7 +12,7 @@ import torch
 
 from model_inference import load_trained_model, predict_volume
 
-st.set_page_config(page_title="NeuroVision AI", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="NeuroVision AI | MRI Research Workstation", layout="wide")
 st.markdown("""
 <style>
 .stApp{background:radial-gradient(ellipse at 15% 0%,#17183b 0%,#0a0b16 48%,#080a12 100%);color:#eef0ff}
@@ -21,13 +21,20 @@ st.markdown("""
 .small-muted{color:#9ca3c7;font-size:.9rem}
 .panel{background:linear-gradient(145deg,rgba(28,30,59,.92),rgba(14,16,32,.95));border:1px solid #2b2d52;border-radius:18px;padding:16px}
 div[data-testid="stMetric"]{background:#15172d;border:1px solid #292b4c;padding:14px;border-radius:14px}
-.stButton>button{border-radius:10px;border:1px solid #5754a8;background:linear-gradient(90deg,#6556dc,#3977f6);color:white;font-weight:650}
+.stButton>button{border-radius:8px;border:1px solid #3d78a8;background:#176b9a;color:white;font-weight:600;padding:.55rem 1rem}
+h1,h2,h3{letter-spacing:-.025em}
+[data-testid="stAlert"]{border-radius:8px}
+div[data-testid="stFileUploader"]{border:1px solid #30354a;border-radius:10px;padding:8px}
+div[data-testid="stMetric"] label{color:#aeb8ca}
+div[data-testid="stMetricValue"]{color:#f3f6fb}
+hr{border-color:#2a3040}
+.stMarkdown p{line-height:1.55}
 </style>
 """, unsafe_allow_html=True)
-st.markdown('<span style="padding:5px 10px;border-radius:20px;background:#202044;border:1px solid #414276;color:#c9caff">RESEARCH WORKSTATION · MULTIMODAL MRI</span>', unsafe_allow_html=True)
-st.title("🧠 NeuroVision AI")
-st.markdown('<p class="small-muted">Multimodal brain MRI · 3D slice viewer · AI tumour-region segmentation</p>', unsafe_allow_html=True)
-st.warning("Academic research prototype only. Predictions are not clinically validated and must not be used for diagnosis or treatment decisions.")
+st.markdown('<div style="font-size:.76rem;letter-spacing:.12em;font-weight:650;color:#8eb8d8;margin-bottom:.4rem">NEUROIMAGING RESEARCH PLATFORM</div>', unsafe_allow_html=True)
+st.title("NeuroVision AI")
+st.markdown('<p class="small-muted">Multimodal MRI review · 3D slice navigation · Research segmentation</p>', unsafe_allow_html=True)
+st.info("Research prototype. Outputs are not clinically validated and must not be used for diagnosis or treatment decisions.")
 
 checkpoint_path=Path(os.environ.get("NEUROVISION_CHECKPOINT","brats3d_unet_balanced_dice_ce_epoch006.pth"))
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -35,9 +42,17 @@ with st.sidebar:
     st.header("Workspace")
     st.markdown("**Input order:** FLAIR · T1 · T1ce · T2")
     st.markdown("**Encoded output:**")
-    st.markdown("🟦 Label 1 · 🟨 Label 2")
-    if checkpoint_path.is_file(): st.success(f"Checkpoint found: {checkpoint_path.name}")
-    else: st.error("Checkpoint missing"); st.caption("Place the .pth file in the app root or set NEUROVISION_CHECKPOINT.")
+    st.markdown("""
+    <div style="font-size:.82rem;color:#c6cfdd;line-height:2">
+      <span style="color:#00D5E8">■</span> Label 1<br>
+      <span style="color:#FFD21F">■</span> Label 2
+    </div>
+    """, unsafe_allow_html=True)
+    if checkpoint_path.is_file():
+        st.success("Model checkpoint available")
+    else:
+        st.error("Model weights unavailable")
+        st.caption("AI inference is disabled until the trained checkpoint is configured. MRI viewing remains available.")
     st.caption(f"Device: {device}")
 
 def read_nifti(data, filename):
@@ -127,9 +142,9 @@ if loaded:
         with col:
             st.pyplot(slice_fig(volumes[key],z,f"{key} · slice {z}"),use_container_width=True)
     st.header("03 / AI tumour segmentation")
-    st.caption("Inference uses overlapping 96³ patches. Correct preprocessing, modality order, orientation and label mapping must match the training pipeline.")
+    st.caption("Research inference uses overlapping 3D patches. Preprocessing, modality order, spatial orientation and output-label mapping must match the training pipeline.")
     if not checkpoint_path.is_file():
-        st.warning("Viewer is available, but AI prediction is disabled until the trained checkpoint is installed.")
+        st.info("MRI viewer ready. Segmentation is unavailable because the trained model checkpoint has not been configured in this deployment.")
     elif st.button("Run AI segmentation",type="primary"):
         try:
             with st.spinner(f"Loading checkpoint and running inference on {device}…"):
