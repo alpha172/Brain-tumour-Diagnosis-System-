@@ -1,24 +1,27 @@
 # NeuroVision AI
 
-A dark, purple/blue Streamlit research workstation for four-modality brain MRI review.
+A Streamlit research prototype for reviewing four aligned brain MRI modalities (FLAIR, T1, T1ce and T2) and viewing predicted tumour-region masks.
 
 ## Current capabilities
-- Upload T1, T1ce, T2 and FLAIR as individual NIfTI files or one ZIP archive.
-- Validate that all four inputs are 3D and have matching dimensions.
-- Browse axial slices and preview all four modalities.
-- Explicitly avoids fabricating tumour masks when trained weights are unavailable.
+- Upload four aligned 3D NIfTI MRI volumes individually or as a ZIP.
+- Browse axial slices across the four modalities.
+- Run sliding-window 3D U-Net inference when a compatible trained checkpoint is available.
+- Overlay predicted **Label 1 in cyan** and **Label 2 in yellow**.
+- Hide output class 3 (the configured BraTS label-4 / enhancing-tumour class) from the displayed and exported mask.
+- Download the displayed Label 1/Label 2 mask as NIfTI.
+- Show the project's previously recorded held-out Dice metrics: Label 1 = 0.1680 and Label 2 = 0.3641.
 
-## Important model status
-The provided notebook defines a 3D model and runs forward passes on a randomly initialized model. It does not demonstrate loading a trained checkpoint or show trained inference results. Therefore this app intentionally does not claim to segment tumours yet.
+## Checkpoint setup (required for new predictions)
+The model weights are not included in this repository. The app will display the MRI viewer, but new-scan inference requires the actual trained checkpoint file.
 
-Before enabling segmentation:
-1. Supply the actual trained checkpoint (`.pth` / `.pt`).
-2. Confirm the exact model architecture and preprocessing used during training.
-3. Verify how the three output channels map to segmentation labels.
-4. Test on held-out cases with known ground truth.
-5. Display only labels 1 and 2; suppress label 4 in the viewer and exported mask.
+1. Put the compatible checkpoint in the app root as `brats3d_unet_balanced_dice_ce_epoch006.pth`, **or** configure the `NEUROVISION_CHECKPOINT` environment variable to its path.
+2. Ensure the checkpoint contains a `model_state_dict` matching the architecture in `model_inference.py`.
+3. Verify preprocessing, modality order, orientation, label mapping, and performance on held-out cases from the original training pipeline before relying on outputs.
 
-Do not commit patient MRI files or model weights to a public repository.
+Do not commit patient MRI data or sensitive files to a public repository. If checkpoint size or repository policy makes GitHub unsuitable, use a permitted private artifact store and configure the deployment to access it securely.
+
+## Model verification
+The displayed Dice values are previously recorded dataset-level results supplied for this project. They are **not** a per-scan confidence score and do not independently establish clinical performance. The current code is an academic prototype and has not been clinically validated.
 
 ## Run locally
 ```bash
@@ -26,10 +29,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Deploy publicly with Streamlit Community Cloud
-1. Create a GitHub repository and upload `app.py`, `requirements.txt`, and this README.
-2. Visit https://share.streamlit.io and sign in with GitHub.
-3. Create an app, select your repository, branch `main`, and entrypoint `app.py`.
-4. Deploy. Streamlit will provide the actual public URL.
+## Deploy with Streamlit Community Cloud
+Select this repository, branch `main`, and `app.py` as the entry point. The app will redeploy after commits to the selected branch. Confirm the checkpoint is accessible in the deployed environment before testing new-scan inference.
 
-A public URL cannot be created from this package alone; deployment must be authorized from your GitHub/Streamlit account.
+**Not for clinical decision-making.** Predictions may be inaccurate and must not be used to diagnose, treat, or rule out a brain tumour.
